@@ -6,7 +6,6 @@
     <title>Sistem Inventaris Roti</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Gaya tambahan untuk tombol Aksi seperti pada gambar */
         .action-buttons {
             display: flex;
             gap: 8px;
@@ -41,17 +40,13 @@
 </head>
 <body>
 <div class="container">
-    <!-- Judul Utama -->
     <h1 class="title">🍞 Sistem Inventaris Roti</h1>
 
-    <!-- Kartu Form -->
     <div class="card">
       <form id="formData">
-        <!-- Input tersembunyi untuk menyimpan ID saat mode Edit -->
         <input type="hidden" id="ID">
 
         <div class="form-grid">
-          <!-- Baris 1: Kolom 1 (Nama Roti) -->
           <div class="form-group">
             <label class="form-label">🍞 Nama Roti</label>
             <div class="input-wrapper">
@@ -60,7 +55,6 @@
             </div>
           </div>
 
-          <!-- Baris 1: Kolom 2 (Harga Satuan) -->
           <div class="form-group">
             <label class="form-label">📷 Harga Satuan (Rp)</label>
             <div class="input-wrapper">
@@ -69,7 +63,6 @@
             </div>
           </div>
 
-          <!-- Baris 2: Kolom 3 (Kategori Roti) -->
           <div class="form-group">
             <label class="form-label">📁 Kategori Roti</label>
             <div class="input-wrapper">
@@ -84,7 +77,6 @@
           </div>
         </div>
 
-        <!-- Tombol Aksi -->
         <div class="button-group">
           <button type="submit" id="btnSubmit" class="btn btn-submit">+ Tambahkan ke Stok</button>
           <button type="button" id="btnReset" class="btn btn-reset">Reset Form</button>
@@ -92,13 +84,13 @@
       </form>
     </div>
 
-    <!-- Kartu Tabel Data -->
     <div class="card table-card">
         <h2 class="subtitle">Daftar Stok Roti</h2>
         <div class="table-responsive">
             <table class="data-table">
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>Nama Roti</th>
                         <th>Harga Satuan</th>
                         <th>Kategori</th>
@@ -113,11 +105,8 @@
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbwJ8rCtxStEAccXTcQk7LGhvj5HSxWLHGN-PejJ25CTYOyP_ayTTS-uaV3p2UZ7Wcxi/exec';
-let currentData = []; // Menyimpan data sementara untuk keperluan Edit
+let currentData = [];
 
-// ==================================================
-// READ: AMBIL DATA DARI SPREADSHEET
-// ==================================================
 async function loadData() {
     try {
         const response = await fetch(API_URL + '?action=read');
@@ -128,7 +117,8 @@ async function loadData() {
             return;
         }
 
-        currentData = result.data;
+        // Data baru (paling bawah di sheet) naik ke atas, data lama turun ke bawah
+        currentData = result.data.reverse();
         renderTable(currentData);
     } catch (error) {
         console.error(error);
@@ -136,17 +126,15 @@ async function loadData() {
     }
 }
 
-// ==================================================
-// RENDER TABEL + TOMBOL EDIT & HAPUS
-// ==================================================
 function renderTable(data) {
     const table = document.getElementById('tableData');
     table.innerHTML = '';
 
-    data.forEach(function(item) {
+    data.forEach(function(item, index) {
         const row = document.createElement('tr');
 
         row.innerHTML = `
+            <td>${index + 1}</td>
             <td>${item.NAMA_ROTI || ''}</td>
             <td>Rp ${Number(item.HARGA || 0).toLocaleString('id-ID')}</td>
             <td><span class="badge">${item.KATEGORI || ''}</span></td>
@@ -162,9 +150,6 @@ function renderTable(data) {
     });
 }
 
-// ==================================================
-// MASUK MODE EDIT (ISI FORM DARI BARIS YANG DIPILIH)
-// ==================================================
 function editData(id) {
     const item = currentData.find(d => d.ID === id);
     if (!item) return;
@@ -174,17 +159,12 @@ function editData(id) {
     document.getElementById('HARGA').value = item.HARGA;
     document.getElementById('KATEGORI').value = item.KATEGORI;
 
-    const btnSubmit = document.getElementById('btnSubmit');
-    btnSubmit.innerHTML = '💾 Simpan Perubahan';
+    document.getElementById('btnSubmit').innerHTML = '💾 Simpan Perubahan';
     document.getElementById('btnReset').innerHTML = 'Batal Edit';
 
-    // Scroll ke atas menuju form
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ==================================================
-// RESET FORM & KELUAR DARI MODE EDIT
-// ==================================================
 function resetFormState() {
     document.getElementById('formData').reset();
     document.getElementById('ID').value = '';
@@ -194,9 +174,6 @@ function resetFormState() {
 
 document.getElementById('btnReset').addEventListener('click', resetFormState);
 
-// ==================================================
-// CREATE & UPDATE: SUBMIT FORM
-// ==================================================
 document.getElementById('formData').addEventListener('submit', async function(e) {
     e.preventDefault();
 
@@ -244,9 +221,6 @@ document.getElementById('formData').addEventListener('submit', async function(e)
     }
 });
 
-// ==================================================
-// DELETE: HAPUS DATA BERDASARKAN ID
-// ==================================================
 async function deleteData(id, namaRoti) {
     const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus "${namaRoti}" dari daftar stok?`);
     if (!konfirmasi) return;
@@ -264,7 +238,6 @@ async function deleteData(id, namaRoti) {
         alert(result.message);
 
         if (result.success) {
-            // Jika item yang dihapus sedang dibuka di form edit, reset form
             if (document.getElementById('ID').value === id) {
                 resetFormState();
             }
